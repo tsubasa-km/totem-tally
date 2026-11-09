@@ -17,19 +17,13 @@ public final class TotemTallyConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(TotemTally.MOD_ID);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    /** Show the totem counter on the HUD. */
+    /** Show the totem gauge on the HUD. */
     public boolean showHud = true;
-    /** Keep the counter visible when you carry no totems. */
+    /** Keep one empty icon visible when you carry no totems. */
     public boolean showWhenEmpty = false;
-    /** Which side of the hotbar the counter sits on: "left" or "right". */
-    public String side = "left";
-    /** Extra offset in GUI pixels, added after the default position. */
+    /** Extra offset in GUI pixels, added after the default position above the hunger bar. */
     public int xOffset = 0;
     public int yOffset = 0;
-
-    public boolean isRightSide() {
-        return "right".equalsIgnoreCase(side);
-    }
 
     static TotemTallyConfig load() {
         Path path = FabricLoader.getInstance().getConfigDir().resolve(TotemTally.MOD_ID + ".json");

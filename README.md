@@ -1,13 +1,13 @@
 # Totem Tally
 
-A small Fabric mod for Minecraft 26.3 that makes Totems of Undying stack up to 64, and shows how many you carry on the HUD.
+A small Fabric mod for Minecraft 26.3 that makes Totems of Undying stack up to 64, and adds a totem gauge to the HUD.
 
 ## Features
 
 - **Totems stack everywhere.** The Totem of Undying's default max stack size is raised to 64, so totems stack in your inventory, in chests, in hoppers and as dropped items. Totems collected by a hopper from a mob farm stack too.
 - **One totem per save.** When a stack of totems saves you, only one totem is used up, just like vanilla.
 - **Works with existing totems.** Totems that a datapack gave an explicit `max_stack_size` of 64 lose that extra data when they are loaded, so they stack with all other totems.
-- **Totem counter.** A totem icon next to the hotbar shows the total number of totems in your inventory, hotbar and offhand.
+- **Totem gauge.** A row of totem icons above the hunger bar, like the armor bar above the hearts. Bright icons are totems in your main hand or offhand, the only ones that can save you. Dark icons are totems that are only in your inventory. Above ten totems the total is shown next to the gauge. The gauge moves up when air bubbles or mount hearts are shown.
 
 ## Installation
 
@@ -17,13 +17,12 @@ A small Fabric mod for Minecraft 26.3 that makes Totems of Undying stack up to 6
 
 ## Configuration
 
-The counter is configured in `config/totem_tally.json` on the client:
+The gauge is configured in `config/totem_tally.json` on the client:
 
 | Option | Default | Description |
 |---|---|---|
-| `showHud` | `true` | Show the counter |
-| `showWhenEmpty` | `false` | Keep the counter visible when you carry no totems |
-| `side` | `"left"` | Side of the hotbar: `"left"` or `"right"`. The counter moves outward when the offhand slot is on the same side |
+| `showHud` | `true` | Show the gauge |
+| `showWhenEmpty` | `false` | Keep one empty icon visible when you carry no totems |
 | `xOffset`, `yOffset` | `0` | Extra offset in GUI pixels |
 
 ## Building

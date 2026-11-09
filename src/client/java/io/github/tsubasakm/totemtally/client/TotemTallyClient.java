@@ -8,73 +8,86 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** Draws a totem icon with the number of totems you carry next to the hotbar. */
+/**
+ * Draws a totem gauge above the hunger bar, like the armor bar above the hearts.
+ * Bright icons are totems in your hands, which are the ones that can save you;
+ * dark icons are totems that are only in your inventory.
+ */
 public final class TotemTallyClient implements ClientModInitializer {
-    private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath(TotemTally.MOD_ID, "totem_counter");
-    // Hotbar is 182 px wide; the offhand slot is drawn 29 px beyond its edge
+    private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath(TotemTally.MOD_ID, "totem_gauge");
+    private static final Identifier FULL_SPRITE = Identifier.fromNamespaceAndPath(TotemTally.MOD_ID, "hud/totem_full");
+    private static final Identifier EMPTY_SPRITE = Identifier.fromNamespaceAndPath(TotemTally.MOD_ID, "hud/totem_empty");
+    private static final int MAX_ICONS = 10;
+    private static final int ICON_SIZE = 9;
+    private static final int ICON_SPACING = 8;
+    // The hunger bar ends 91 px right of the screen center; its row starts 39 px above the bottom
     private static final int HOTBAR_HALF_WIDTH = 91;
-    private static final int OFFHAND_SLOT_WIDTH = 29;
-    private static final int GAP = 6;
-    private static final int ICON_SIZE = 16;
-    private static final int READY_COLOR = 0xFFFFFFFF;
-    private static final int NOT_READY_COLOR = 0xFFFF5555;
-    private static final int NOT_READY_SHADE = 0xA0000000;
+    private static final int ROW_ABOVE_FOOD = 49;
+    private static final int ROW_HEIGHT = 10;
+    private static final int COUNT_COLOR = 0xFFFFFFFF;
 
     private static TotemTallyConfig config;
-    // Created on first render: item stacks cannot be made before the item components are bound
-    private static ItemStack icon;
 
     @Override
     public void onInitializeClient() {
         config = TotemTallyConfig.load();
-        HudElementRegistry.attachElementAfter(VanillaHudElements.HOTBAR, HUD_ID, TotemTallyClient::render);
+        HudElementRegistry.attachElementAfter(VanillaHudElements.FOOD_BAR, HUD_ID, TotemTallyClient::render);
     }
 
     private static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
-        if (!config.showHud || player == null || player.isSpectator()) {
+        if (!config.showHud || player == null || player.isSpectator() || player.isCreative()) {
             return;
         }
-        int count = countTotems(player.getInventory());
-        if (count == 0 && !config.showWhenEmpty) {
+        int total = countTotems(player.getInventory());
+        if (total == 0 && !config.showWhenEmpty) {
             return;
         }
+        int held = countHeld(player, InteractionHand.MAIN_HAND) + countHeld(player, InteractionHand.OFF_HAND);
+        int icons = Math.max(1, Math.min(total, MAX_ICONS));
+        int ready = Math.min(held, icons);
 
-        boolean right = config.isRightSide();
-        // The offhand slot sits on the side opposite the main arm
-        boolean offhandOnRight = player.getMainArm() == HumanoidArm.LEFT;
-        boolean offhandShown = !player.getOffhandItem().isEmpty();
-        int edge = HOTBAR_HALF_WIDTH + GAP;
-        if (offhandShown && offhandOnRight == right) {
-            edge += OFFHAND_SLOT_WIDTH;
+        int right = graphics.guiWidth() / 2 + HOTBAR_HALF_WIDTH + config.xOffset;
+        int y = graphics.guiHeight() - ROW_ABOVE_FOOD - extraRows(player) * ROW_HEIGHT + config.yOffset;
+        // Filled from the right, like the hunger bar below it
+        for (int i = 0; i < icons; i++) {
+            int x = right - ICON_SIZE - i * ICON_SPACING;
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, i < ready ? FULL_SPRITE : EMPTY_SPRITE, x, y, ICON_SIZE, ICON_SIZE);
         }
-        int centerX = graphics.guiWidth() / 2;
-        int x = (right ? centerX + edge : centerX - edge - ICON_SIZE) + config.xOffset;
-        int y = graphics.guiHeight() - 19 + config.yOffset;
+        // Past ten icons the gauge is full, so show the total to the left of it
+        if (total > MAX_ICONS) {
+            String text = Integer.toString(total);
+            int left = right - ICON_SIZE - (icons - 1) * ICON_SPACING;
+            graphics.text(minecraft.font, text, left - 2 - minecraft.font.width(text), y + 1, COUNT_COLOR, true);
+        }
+    }
 
-        if (icon == null) {
-            icon = new ItemStack(Items.TOTEM_OF_UNDYING);
+    /** Rows that vanilla adds above the hunger bar: mount hearts beyond the first row, and air bubbles. */
+    private static int extraRows(LocalPlayer player) {
+        int rows = 0;
+        if (player.getVehicle() instanceof LivingEntity mount && mount.showVehicleHealth()) {
+            int hearts = Math.min((int) (mount.getMaxHealth() + 0.5F) / 2, 30);
+            rows += Math.max(0, (hearts + 9) / 10 - 1);
         }
-        // A totem only saves you from a hand, so show whether one is ready there
-        boolean ready = player.getMainHandItem().is(Items.TOTEM_OF_UNDYING)
-                || player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
+        if (player.isEyeInFluid(FluidTags.WATER) || player.getAirSupply() < player.getMaxAirSupply()) {
+            rows++;
+        }
+        return rows;
+    }
 
-        graphics.item(icon, x, y);
-        graphics.nextStratum();
-        if (!ready) {
-            graphics.fill(x, y, x + ICON_SIZE, y + ICON_SIZE, NOT_READY_SHADE);
-        }
-        // Drawn like a vanilla item count, also for a single totem, so the counter reads the same at a glance
-        String text = Integer.toString(count);
-        graphics.text(minecraft.font, text, x + ICON_SIZE + 1 - minecraft.font.width(text), y + 9,
-                ready ? READY_COLOR : NOT_READY_COLOR, true);
+    private static int countHeld(LocalPlayer player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        return stack.is(Items.TOTEM_OF_UNDYING) ? stack.getCount() : 0;
     }
 
     private static int countTotems(Inventory inventory) {
