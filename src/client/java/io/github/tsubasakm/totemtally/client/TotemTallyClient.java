@@ -17,7 +17,6 @@ import net.minecraft.world.item.Items;
 /** Draws a totem icon with the number of totems you carry next to the hotbar. */
 public final class TotemTallyClient implements ClientModInitializer {
     private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath(TotemTally.MOD_ID, "totem_counter");
-    private static final ItemStack ICON = new ItemStack(Items.TOTEM_OF_UNDYING);
     // Hotbar is 182 px wide; the offhand slot is drawn 29 px beyond its edge
     private static final int HOTBAR_HALF_WIDTH = 91;
     private static final int OFFHAND_SLOT_WIDTH = 29;
@@ -25,6 +24,8 @@ public final class TotemTallyClient implements ClientModInitializer {
     private static final int ICON_SIZE = 16;
 
     private static TotemTallyConfig config;
+    // Created on first render: item stacks cannot be made before the item components are bound
+    private static ItemStack icon;
 
     @Override
     public void onInitializeClient() {
@@ -55,9 +56,12 @@ public final class TotemTallyClient implements ClientModInitializer {
         int x = (right ? centerX + edge : centerX - edge - ICON_SIZE) + config.xOffset;
         int y = graphics.guiHeight() - 19 + config.yOffset;
 
-        graphics.item(ICON, x, y);
+        if (icon == null) {
+            icon = new ItemStack(Items.TOTEM_OF_UNDYING);
+        }
+        graphics.item(icon, x, y);
         // Always draw the number, also for a single totem, so the counter reads the same at a glance
-        graphics.itemDecorations(minecraft.font, ICON, x, y, Integer.toString(count));
+        graphics.itemDecorations(minecraft.font, icon, x, y, Integer.toString(count));
     }
 
     private static int countTotems(Inventory inventory) {
