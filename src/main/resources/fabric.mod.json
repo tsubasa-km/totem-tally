@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "totem_tally",
+  "version": "${version}",
+  "name": "Totem Tally",
+  "description": "Totems of Undying stack up to 64 everywhere (inventories, chests, hoppers, dropped items), and a HUD shows how many you carry.",
+  "authors": ["tsubasa-km"],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/totem-tally",
+    "sources": "https://github.com/tsubasa-km/totem-tally",
+    "issues": "https://github.com/tsubasa-km/totem-tally/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/totem_tally/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["io.github.tsubasakm.totemtally.TotemTally"],
+    "client": ["io.github.tsubasakm.totemtally.client.TotemTallyClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
