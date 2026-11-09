@@ -22,6 +22,9 @@ public final class TotemTallyClient implements ClientModInitializer {
     private static final int OFFHAND_SLOT_WIDTH = 29;
     private static final int GAP = 6;
     private static final int ICON_SIZE = 16;
+    private static final int READY_COLOR = 0xFFFFFFFF;
+    private static final int NOT_READY_COLOR = 0xFFFF5555;
+    private static final int NOT_READY_SHADE = 0xA0000000;
 
     private static TotemTallyConfig config;
     // Created on first render: item stacks cannot be made before the item components are bound
@@ -59,9 +62,19 @@ public final class TotemTallyClient implements ClientModInitializer {
         if (icon == null) {
             icon = new ItemStack(Items.TOTEM_OF_UNDYING);
         }
+        // A totem only saves you from a hand, so show whether one is ready there
+        boolean ready = player.getMainHandItem().is(Items.TOTEM_OF_UNDYING)
+                || player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
+
         graphics.item(icon, x, y);
-        // Always draw the number, also for a single totem, so the counter reads the same at a glance
-        graphics.itemDecorations(minecraft.font, icon, x, y, Integer.toString(count));
+        graphics.nextStratum();
+        if (!ready) {
+            graphics.fill(x, y, x + ICON_SIZE, y + ICON_SIZE, NOT_READY_SHADE);
+        }
+        // Drawn like a vanilla item count, also for a single totem, so the counter reads the same at a glance
+        String text = Integer.toString(count);
+        graphics.text(minecraft.font, text, x + ICON_SIZE + 1 - minecraft.font.width(text), y + 9,
+                ready ? READY_COLOR : NOT_READY_COLOR, true);
     }
 
     private static int countTotems(Inventory inventory) {
