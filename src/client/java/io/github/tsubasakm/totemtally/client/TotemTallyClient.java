@@ -64,11 +64,9 @@ public final class TotemTallyClient implements ClientModInitializer {
             int x = right - ICON_SIZE - i * ICON_SPACING;
             graphics.blitSprite(RenderPipelines.GUI_TEXTURED, i < ready ? FULL_SPRITE : EMPTY_SPRITE, x, y, ICON_SIZE, ICON_SIZE);
         }
-        // Past ten icons the gauge is full, so show the total to the left of it
+        // Past ten icons the gauge is full, so show the total to the right of it
         if (total > MAX_ICONS) {
-            String text = Integer.toString(total);
-            int left = right - ICON_SIZE - (icons - 1) * ICON_SPACING;
-            graphics.text(minecraft.font, text, left - 2 - minecraft.font.width(text), y + 1, COUNT_COLOR, true);
+            graphics.text(minecraft.font, Integer.toString(total), right + 2, y + 1, COUNT_COLOR, true);
         }
     }
 
